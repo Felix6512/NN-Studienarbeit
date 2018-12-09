@@ -52,17 +52,22 @@ class PendulumEnv(gym.Env):
         self.sollwert = 0.5
         
         self.last_out = 0
+        
         self.time = 0
+        self.winkel = []
+        self.time_array = []
+        
         self.T = 0.1
         self.dt = 1
         self.K = 1
+        
         self.done = 0
         self.state = np.array([0, 0])               # Winkel des Systems
         self.last_theta = 0
         
         self.max_speed=8
         self.max_out=1.
-        self.dt=.05
+        self.dt=1
         self.viewer = None
 
         high = np.array([1.1, 1.1, self.max_speed])
@@ -102,7 +107,7 @@ class PendulumEnv(gym.Env):
         K = self.K
         th, thdot = self.state
         soll = self.sollwert
-        temp_th = th
+        #temp_th = th #für berechnung von thdot
         costs = 0
         for i in np.arange(0, 10):
             #self.last_theta = th
@@ -112,11 +117,15 @@ class PendulumEnv(gym.Env):
             self.last_theta = th
             if th>1:print(th)
             if th<-1:print(th)
-            self.time += 1
+            
+            self.winkel.append(th)
+            self.time_array.append(self.time)
+            self.time += 1    
             
         self.state = np.array([th, thdot])
         th = np.clip(th, -1, 1)
         costs = (soll - 1)**2 
+        costs = np.clip(costs, -1, 1)
         #u = np.clip(u, -self.K, self.K)  # -K <= Regelwert u <= K
         self.last_u = u
         
@@ -158,7 +167,16 @@ class PendulumEnv(gym.Env):
 #            self.imgtrans.scale = (-self.last_u/2, np.abs(self.last_u)/2)
 #
 #        return self.viewer.render(return_rgb_array = mode=='rgb_array')
-
+    def plot(self):
+        plt.plot(self.time_array, self.winkel)
+        #plt.plot(time, winkel_ges)
+        plt.gca().set_ylim(-10,10)
+        plt.grid()
+        #print(winkel[-1])
+        plt.show()
+        #print(t.shape)
+        
+        
     def close(self):
         if self.viewer:
             self.viewer.close()
@@ -226,3 +244,4 @@ agent.save_weights('ddpg_{}_weights.h5f'.format('Pendulum-V0'), overwrite=True)
 # Finally, evaluate our algorithm for 5 episodes.
 agent.test(env, nb_episodes=5, visualize=False, nb_max_episode_steps=200)
 env.close()
+env.plot()
