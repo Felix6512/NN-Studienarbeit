@@ -21,6 +21,7 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 from os import path
+from matplotlib import pyplot as plt
 
 class PendulumEnv(gym.Env):
     metadata = {
@@ -49,7 +50,7 @@ class PendulumEnv(gym.Env):
         self.time_list = []
         self.state_list = []
         
-        self.sollwert = 0.4
+        self.sollwert = 0
         
         self.last_out = 0
         
@@ -58,7 +59,7 @@ class PendulumEnv(gym.Env):
         self.time_array = []
         self.winkel_ges = []
         
-        self.T = 0.1
+        self.T = 5
         self.dt = 1
         self.K = 1
         
@@ -108,9 +109,9 @@ class PendulumEnv(gym.Env):
         K = self.K
         th, thdot = self.state
         
-        for i in np.arrange(0, 50):
+        for i in np.arange(0, 100):
             if (self.time == (1000 * i)):
-                soll = np.random.random(1)*2-1
+                self.sollwert = np.random.random()*2-1
         
         #soll = np.sin(self.time/1000)
         #temp_th = th #für berechnung von thdot
@@ -127,16 +128,16 @@ class PendulumEnv(gym.Env):
             self.winkel.append(th)
             self.time_array.append(self.time)
             self.time += 1    
-            self.winkel_ges.append(soll)
+            self.winkel_ges.append(self.sollwert)
         self.state = np.array([th, thdot])
         th = np.clip(th, -1, 1)
-        costs = (soll - th)**2 /2
+        costs = (self.sollwert - th)**2 /2
         costs = np.clip(costs, -1, 1)
         #u = np.clip(u, -self.K, self.K)  # -K <= Regelwert u <= K
         self.last_u = u
         
         
-        return np.array([th, th, soll]), -costs, False, {} #[th,(th-temp_th)/dt,th]
+        return np.array([th, th, self.sollwert]), -costs, False, {} #[th,(th-temp_th)/dt,th]
 
     def reset(self):
         high = np.array([np.pi, 1])
@@ -243,7 +244,7 @@ agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mae'])
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
-agent.fit(env, nb_steps=1000, visualize=False, verbose=1, nb_max_episode_steps=200) #steps 50000
+agent.fit(env, nb_steps=5000, visualize=False, verbose=1, nb_max_episode_steps=200) #steps 50000
 
 # After training is done, we save the final weights.
 agent.save_weights('ddpg_{}_weights.h5f'.format('Pendulum-V0'), overwrite=True)
